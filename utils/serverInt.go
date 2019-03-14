@@ -29,6 +29,8 @@ type Program struct {
 	Upload string `yaml:upload`
 	//限制哪些文件不能上传
 	Types string `yaml:types`
+	//是否开放https
+	Https bool `yaml:https`
 	//服务
 	Server *http.Server
 	//退出

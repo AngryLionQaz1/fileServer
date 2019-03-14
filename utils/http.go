@@ -39,15 +39,29 @@ func HttpServer(program *Program) {
 			CheckErr(err)
 		}
 	}()
-	err := program.Server.ListenAndServe()
-	if err != nil {
-		// 正常退出
-		if err == http.ErrServerClosed {
-			CheckErr(err)
-		} else {
-			CheckErr(err)
+	if program.Https {
+		dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+		err := program.Server.ListenAndServeTLS(filepath.Join(dir, "server.crt"), filepath.Join(dir, "server.key"))
+		if err != nil {
+			// 正常退出
+			if err == http.ErrServerClosed {
+				CheckErr(err)
+			} else {
+				CheckErr(err)
+			}
+			Logs("Server exited")
 		}
-		Logs("Server exited")
+	} else {
+		err := program.Server.ListenAndServe()
+		if err != nil {
+			// 正常退出
+			if err == http.ErrServerClosed {
+				CheckErr(err)
+			} else {
+				CheckErr(err)
+			}
+			Logs("Server exited")
+		}
 	}
 
 }

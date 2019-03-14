@@ -1,8 +1,18 @@
+#服务系统名称
 name: GoFilerServer
+#服务名
 displayName: 文件服务
+#服务详细描述
 description: Go 文件服务器
+#磁盘地址
 path: F:\tools\工具\Linux系统
+#服务端口
 port: 8086
+#上传文件大小 M
 size: 5000
+#上传uri file
 upload: upload
+#禁止上传文件类型
 types: jar,bat
+#是否开启https server.crt server.key
+https: true
