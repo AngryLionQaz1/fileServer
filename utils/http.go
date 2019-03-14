@@ -5,7 +5,6 @@ import (
 	"github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -48,7 +47,6 @@ func HttpServer(program *Program) {
 		} else {
 			CheckErr(err)
 		}
-		log.Fatal("Server exited")
 		Logs("Server exited")
 	}
 
