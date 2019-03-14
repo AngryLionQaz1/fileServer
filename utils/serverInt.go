@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"github.com/kardianos/service"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -33,13 +32,11 @@ type Program struct {
 	Server *http.Server
 	//退出
 	Quit chan os.Signal
-
 }
-
 
 func (p *Program) run() {
 
-	fmt.Println("sssssssssssssssssssssss")
+	HttpServer(p)
 
 }
 
@@ -71,7 +68,6 @@ func InitService(p *Program) *service.Config {
 
 	return serviceConfig
 }
-
 
 //读取配置文件
 func InitProgram() *Program {
