@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"bytes"
 	"github.com/satori/go.uuid"
-	"container/list"
 	"io"
 	"io/ioutil"
 	"log"
@@ -20,14 +20,13 @@ import (
 
 var fileServer http.Handler
 
-func HttpServer(program *Program)  {
-
+func HttpServer(program *Program) {
 
 	signal.Notify(program.Quit, os.Interrupt)
 	mux := http.NewServeMux()
 	fileServer = http.FileServer(http.Dir(program.Path))
 	mux.Handle("dir", fileServer)
-	mux.HandleFunc("/",sx)
+	mux.HandleFunc("/", sx)
 	mux.Handle("/"+program.Upload, uploadHandler(program))
 	program.Server = &http.Server{
 		Addr:         ":" + strconv.Itoa(program.Port),
@@ -38,21 +37,20 @@ func HttpServer(program *Program)  {
 		//接受退出信号
 		<-program.Quit
 		if err := program.Server.Close(); err != nil {
-		    CheckErr(err)
+			CheckErr(err)
 		}
 	}()
-	err :=  program.Server.ListenAndServe()
+	err := program.Server.ListenAndServe()
 	if err != nil {
 		// 正常退出
 		if err == http.ErrServerClosed {
-		    CheckErr(err)
+			CheckErr(err)
 		} else {
 			CheckErr(err)
 		}
 		log.Fatal("Server exited")
 		Logs("Server exited")
 	}
-
 
 }
 
@@ -78,41 +76,47 @@ func uploadHandler(program *Program) http.Handler {
 		}
 		request.ParseMultipartForm(-1)
 		files := request.MultipartForm.File["file"]
-		for _,v:=range files{
-			if  CheckFileType(program.Types,path.Ext(v.Filename)){
-				renderError(writer,"INVALID_FILE_TYPE",http.StatusBadRequest)
+
+		for _, v := range files {
+			if CheckFileType(program.Types, path.Ext(v.Filename)) {
+				renderError(writer, "INVALID_FILE_TYPE", http.StatusBadRequest)
 				break
 			}
+
 		}
 
-		SaveFile(request.MultipartForm.File,program)
-		writer.Write([]byte("SUCCESS"))
+		file := SaveFile(request.MultipartForm.File, program)
+
+		writer.Write([]byte(file))
 	})
 
 }
 
-
 //保存数据到磁盘
-func SaveFile(headers map[string][]*multipart.FileHeader,p *Program)*list.List  {
-
-	i := list.New()
-	files:=headers["file"]
-	dir := CreateDateDir(p.Path)
+func SaveFile(headers map[string][]*multipart.FileHeader, p *Program) string {
+	var buffer bytes.Buffer
+	files := headers["file"]
+	dir, dir2 := CreateDateDir(p.Path)
 	v4 := strings.Replace(uuid.NewV4().String(), "-", "", -1)
-	for k,v:=range files{
-		newPath:=filepath.Join(dir,v4+strconv.Itoa(k)+path.Base(v.Filename))
-		f, _ := v.Open()
-		fileBytes, _ := ioutil.ReadAll(f)
-		newFile, _ := os.Create(newPath)
-		newFile.Write(fileBytes)
-		f.Close()
-		i.PushBack(newPath)
-		log.Fatalln(newPath)
+	for k, v := range files {
+		str := v4 + strconv.Itoa(k) + path.Ext(v.Filename)
+		str2 := filepath.Join(dir2, str)
+		newPath := filepath.Join(dir, str)
+		go func(v *multipart.FileHeader) {
+			f, _ := v.Open()
+			defer f.Close()
+			fileBytes, _ := ioutil.ReadAll(f)
+			newFile, _ := os.Create(newPath)
+			newFile.Write(fileBytes)
+
+		}(v)
+		buffer.WriteString(str2)
+		if k != len(files)-1 {
+			buffer.WriteString(",")
+		}
 	}
-
-	return i
+	return buffer.String()
 }
-
 
 //拦截文件夹
 func filter(url *url.URL) bool {
@@ -125,25 +129,20 @@ func filter(url *url.URL) bool {
 
 }
 
-
 //获取文件类型
-func CheckFileType(s ,s2 string) bool  {
+func CheckFileType(s, s2 string) bool {
 
 	return strings.Contains(s, strings.Replace(s2, ".", "", -1))
 
 }
 
-
-func renderError(writer http.ResponseWriter, s string, i int)  {
+func renderError(writer http.ResponseWriter, s string, i int) {
 	writer.WriteHeader(i)
 	io.WriteString(writer, s)
 }
 
-
-
-
 // CreateDateDir 根据当前日期来创建文件夹
-func CreateDateDir(basePath string) string {
+func CreateDateDir(basePath string) (string, string) {
 	folderName := time.Now().Format("20060102")
 	folderPath := filepath.Join(basePath, folderName)
 	if _, err := os.Stat(folderPath); os.IsNotExist(err) {
@@ -153,11 +152,5 @@ func CreateDateDir(basePath string) string {
 		// 再修改权限
 		os.Chmod(folderPath, 0777)
 	}
-	return folderPath
+	return folderPath, folderName
 }
-
-
-
-
-
-

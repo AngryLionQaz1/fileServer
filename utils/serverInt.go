@@ -7,9 +7,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
-const initFile = `E:\GoProjects\fileServer\main\init.yaml`
+const initFile = `init.yaml`
 
 type Program struct {
 	//服务名
@@ -72,9 +73,9 @@ func InitService(p *Program) *service.Config {
 //读取配置文件
 func InitProgram() *Program {
 	i := new(Program)
-	//dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	//yamlFile, err := ioutil.ReadFile(filepath.Join(dir, initFile))
-	yamlFile, err := ioutil.ReadFile(initFile)
+	dir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
+	yamlFile, err := ioutil.ReadFile(filepath.Join(dir, initFile))
+	//yamlFile, err := ioutil.ReadFile(initFile)
 	CheckErr(err)
 	err = yaml.Unmarshal(yamlFile, i)
 	CheckErr(err)
